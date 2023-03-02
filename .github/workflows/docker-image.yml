@@ -19,10 +19,10 @@ jobs:
         context: .
         file: Dockerfile
         push: false
-        tags: nodeapp:latest
+        tags: nodeapp:1.0.0
 
     - name: Start Docker container
-      uses: docker/compose-action@1.0.0
+      uses: docker/compose-nodeapp@1.0.0
       with:
         compose-file: docker-compose.yml
         service: app
