@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import {Employee,PersonalDetailsData,PersonalDetails,EmploymentDetails,EmploymentDetailsData} from '../interfaces/employeeInterface';
+import {Employee,PersonalDetails,EmploymentDetails} from '../interfaces/employeeInterface';
 import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -71,8 +71,14 @@ export default class FileService {
         })
     }
 
-    public defaultFileData =async (input:Employee[]) => {
+    public setDefaultFileData =async (input:Employee[]) => {
         return await fs.writeFile(this.employeeJsonFile, JSON.stringify(input))
+        .catch((err)=>{
+            throw err;
+        })
+    }
+    public deleteFileData =async () => {
+        return await fs.writeFile(this.employeeJsonFile, JSON.stringify([]))
         .catch((err)=>{
             throw err;
         })

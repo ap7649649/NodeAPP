@@ -123,7 +123,7 @@ export default class EmployeeController {
     }
     public addPersonalDetails = async (req: Request, res: Response) => {        
         const employeeData: PersonalDetails = req.body;
-        const employee = await this.empService.getById(Number(req.params.id));
+        const employee = await this.empService.getById(Number(req.params.id));        
         if(employee.id){            
             try {
                 const isValid : string = await this.ajvSchemaObj.personalSchemaValidator(employeeData);

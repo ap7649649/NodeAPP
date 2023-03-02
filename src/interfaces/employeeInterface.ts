@@ -15,6 +15,25 @@ export enum EmpGender {
   female = "Female"
 }
 
+export enum EmpBloodGroup {
+  Apositive = "A+",
+  Anegative = "A-",
+  Bpositive = "B+",
+  Bnegative = "B-",
+  Opositive = "O+",
+  Onegative = "O-",
+  ABpostive = "AB+",
+  ABnegative = "AB-"
+}
+export enum EmpLocation {
+  mumbai = "Mumbai",
+  pune = "Pune",
+  bangalore = "Bangalore",
+  hyderabad = "Hyderabad",
+  chennai = "Chennai",
+  goa = "Goa",
+}
+
 export interface PersonalDetails {
   gender: string;
   blood_group: string;

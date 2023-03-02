@@ -1,5 +1,5 @@
 import { patternMessages } from '../assets/constants';
-import { EmployeeData,PersonalDetails,EmploymentDetails,Emplevels,EmpMaritalStatus,EmpGender } from '../interfaces/employeeInterface';
+import { EmployeeData,PersonalDetails,EmploymentDetails,Emplevels,EmpMaritalStatus,EmpGender, EmpBloodGroup, EmpLocation } from '../interfaces/employeeInterface';
 import Ajv, { ValidateFunction } from "ajv";
 const ajv = new Ajv({ allErrors: true, $data: true, messages: true });
 require("ajv-formats")(ajv);
@@ -53,7 +53,7 @@ export default class AjvJsonSchema{
         type: "object",
         properties: {
             gender: { type: "string", enum: [EmpGender.male,EmpGender.female] },
-            blood_group: { type: "string", minLength: 1, maxLength: 3 },
+            blood_group: { type: "string", enum:[EmpBloodGroup.ABnegative,EmpBloodGroup.ABpostive,EmpBloodGroup.Anegative,EmpBloodGroup.Apositive,EmpBloodGroup.Bnegative,EmpBloodGroup.Bpositive,EmpBloodGroup.Onegative,EmpBloodGroup.Opositive] },
             marital_status: { type: "string", enum: [EmpMaritalStatus.single,EmpMaritalStatus.married,EmpMaritalStatus.widowed,EmpMaritalStatus.divorced] },
             international_worker: { type: "boolean" },
             dob: { type: "string", format: "date" },
@@ -67,9 +67,9 @@ export default class AjvJsonSchema{
         properties: {
             employer: { type: "string",pattern: "^[a-zA-Z]+$",minLength: 1 },
             designation: {type: "string", enum: [Emplevels.manager,Emplevels.developer,Emplevels.tester,Emplevels.intern]},
-            location: { type: "string",pattern: "^[a-zA-Z]+$",minLength: 1 },
+            location: { type: "string",pattern: "^[a-zA-Z]+$",enum:[EmpLocation.bangalore,EmpLocation.chennai,EmpLocation.goa,EmpLocation.hyderabad,EmpLocation.mumbai,EmpLocation.pune] },
             department: { type: "string",minLength: 1,pattern: "^[a-zA-Z]+$" },
-            reporting_manager: { type: "string",minLength: 1,pattern: "^[a-zA-Z]+$" },
+            reporting_manager: { type: "string",minLength: 3,pattern: "^[a-zA-Z]+$" },
             doj: { type: "string", format: "date" }
         },
         additionalProperties: false,
@@ -98,7 +98,6 @@ export default class AjvJsonSchema{
         }
         return "";
     }
-    
     private isError = (isValid:boolean,err:ValidateFunction):string=>{
         if(!isValid && err.errors){
             return err.errors?.map((data)=>data.message).join(', ');

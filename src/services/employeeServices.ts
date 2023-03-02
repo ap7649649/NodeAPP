@@ -23,7 +23,7 @@ export default class employeeData {
     public getById = (uid: number): Promise<Employee> => {
         return this.fService.getEmployeeFileData()
             .then(data => {
-                const employee = data.find(item => item.id === uid);
+                const employee = data.find(item =>item!=null && item.id === uid);
                 if (employee!==undefined) {
                     if (employee.supervisor === "na") {
                         Object.defineProperty(employee, 'supervisor', { enumerable: false })
@@ -46,7 +46,7 @@ export default class employeeData {
             })
             .catch(err => { return err });
     }
-    public delete = (empid: number): Promise<Employee> => {
+    public delete = async(empid: number): Promise<Employee> => {
         return this.fService.getEmployeeFileData()
             .then((result) => {
                 const eleIndex: number = result.findIndex(item => item!=null && item.id === empid);
@@ -54,6 +54,14 @@ export default class employeeData {
                     const deleteEmployee = result[eleIndex];
                     delete result[eleIndex];
                     this.fService.setData(result);
+                    this.fService.getPersonalFileData().then(data=>{
+                        delete data[empid];
+                        this.fService.setPersonalFileData(data);
+                    })
+                    this.fService.getEmploymentFileData().then(data=>{
+                        delete data[empid];
+                        this.fService.setEmploymentData(data);
+                    })
                     return deleteEmployee;
                 } else {
                     return null;
@@ -123,20 +131,6 @@ export default class employeeData {
             })
             .catch((err) => { return err });
     }
-    // public storePersonalData = async(empId: number,data:PersonalDetails):Promise<PersonalDetailsData> =>{
-    //     const isEmployee = await this.getById(empId).catch(err=>{return err});
-    //     if(isEmployee.id){
-    //         return this.fService.getPersonalFileData()
-    //         .then(result => {
-    //             result[empId] = data;
-    //             this.fService.setPersonalFileData(result);                
-    //             return result[empId];
-    //             })
-    //         .catch((err) => { return err })
-    //     }else{
-    //         throw new Error("No employee found");
-    //     }        
-    // }
     public storePersonalData = async(empId: number,data:PersonalDetails):Promise<PersonalDetailsData> =>{
         return this.fService.getPersonalFileData()
         .then(result => {

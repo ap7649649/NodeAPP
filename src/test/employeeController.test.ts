@@ -1,11 +1,14 @@
 import { assert, expect } from 'chai';
 import axios from 'axios';
-import { after, before, describe, it, test } from 'mocha';
+import { after, afterEach, before, beforeEach, describe, it } from 'mocha';
 import MainServer from '../app';
-import { constants,NoEmployeeError,NoEmployeeWithIDError } from '../assets/constants';
-import { Employee, PersonalDetails } from '../interfaces/employeeInterface';
+import { NoEmployeeError,NoEmployeeWithIDError } from '../assets/constants';
+import { Employee } from '../interfaces/employeeInterface';
+import FileService from '../services/fileServices';
+import { defaultEmployees } from './testData/demoData';
 
-let app;
+let app:MainServer;
+let files:FileService;
 let newEmployeeID = "";
 const newEmployee = {
     "first_name": "Saurav",
@@ -15,7 +18,6 @@ const newEmployee = {
     "level": "Intern",
     "supervisor": "1677220155582"
 }
-
 let newEmployeePersonalData = {
         "gender": "Male",
         "blood_group": "AB-",
@@ -24,19 +26,18 @@ let newEmployeePersonalData = {
         "dob": "1999-04-07",
         "physically_disabled": false
     }
-
 let newEmployeeEmploymentData = {
     "employer" : "afour",
     "designation": "Developer",
     "department" : "Development",
-    "location": "pune",
+    "location": "Pune",
     "doj" : "2022-03-01",
     "reporting_manager" : "Varun"
 }
 
-
 before(() => {
     app = new MainServer()
+    files = new FileService()
     app.initialize();
 });
 
@@ -44,16 +45,25 @@ after(() => {
     process.exit();
 });
 
-//kept for testing if no employee present
-// describe('EmployeeController', () => {
-//     describe('GET /employees',()=>{
-//         test('should return all employees',async()=>{
-//             const response = await axios.get('http://127.0.0.1:3000/employees')            
-//         })
-//     })
-// })
-
 describe('EmployeeController', () => {
+    describe('GET /employees', () => {
+        beforeEach("Setting Pre-condition",()=>{
+            files.deleteFileData();
+        })
+        afterEach("Setting Default Data",()=>{
+            files.setDefaultFileData(defaultEmployees);
+        })
+        describe('When No Employee available employee in Database',()=>{
+            it("should throw status as 404 with a no employee message",async()=>{
+                await axios.get('http://127.0.0.1:3000/employees/1234')
+                .catch((error=>{                        
+                    expect(error.response.status).to.equal(404);
+                    expect(error.response.data).to.contain(NoEmployeeError);
+                }));
+            })
+        })
+    })
+
     describe('GET /employees',()=>{
         describe('When fetching all Employees available',()=>{
             it('should return all employees',async()=>{
@@ -513,16 +523,10 @@ describe('EmployeeController', () => {
     describe("POST /employees/:id/personaldetails",()=>{
         describe("When adding personaldetails of a particular available employee",()=>{
             it("should add the details with status 200",async()=>{
-                const response = await axios.post("http://127.0.0.1:3000/employees/"+newEmployeeID+"/personaldetails",newEmployeePersonalData)
-                expect(response.data).have.property("gender");
-                expect(response.data).have.property("blood_group");
-                expect(response.data).have.property("marital_status");
-                expect(response.data).have.property("international_worker");
-                expect(response.data).have.property("dob");
-                expect(response.data).have.property("physically_disabled");
+                const response = await axios.post("http://127.0.0.1:3000/employees/"+newEmployeeID+"/personaldetails",newEmployeePersonalData)                
+                expect(response.data).to.have.keys('gender','blood_group','marital_status','international_worker','dob','physically_disabled');
             })
-        })
-        
+        })        
         describe("When adding personaldetails of a unavailable employee",()=>{
             it("should throw status 400 with a message",async()=>{
                 await axios.post("http://127.0.0.1:3000/employees/1234567/personaldetails",newEmployeePersonalData)
@@ -532,7 +536,6 @@ describe('EmployeeController', () => {
                 }));
             })
         })
-
         describe("When adding personaldetails of a available employee with blank gender value",()=>{
             it("should throw status 400 with a message",async()=>{
                 await axios.post("http://127.0.0.1:3000/employees/1677220155582/personaldetails",{
@@ -549,7 +552,22 @@ describe('EmployeeController', () => {
                 }));
             })
         })
-
+        describe("When adding personaldetails of a available employee with Invalid gender value",()=>{
+            it("should throw status 400 with a message",async()=>{
+                await axios.post("http://127.0.0.1:3000/employees/1677220155582/personaldetails",{
+                    "gender" : "Mens",
+                    "blood_group" : "B+",
+                    "marital_status" : "Single",
+                    "international_worker" : true,
+                    "dob"  : "2022-03-01",
+                    "physically_disabled" : false
+                })
+                .catch((error=>{
+                    expect(error.response.status).to.equal(400);
+                    expect(error.response.data).to.equal("must be equal to one of the allowed values");
+                }));
+            })
+        })
         describe("When adding personaldetails of a available employee with blank blood_group value",()=>{
             it("should throw status 400 with a message",async()=>{
                 await axios.post("http://127.0.0.1:3000/employees/1677220155582/personaldetails",{
@@ -562,11 +580,26 @@ describe('EmployeeController', () => {
                 })
                 .catch((error=>{
                     expect(error.response.status).to.equal(400);
-                    expect(error.response.data).to.equal("must NOT have fewer than 1 characters");
+                    expect(error.response.data).to.equal("must be equal to one of the allowed values");
                 }));
             })
         })
-
+        describe("When adding personaldetails of a available employee with invalid blood_group value",()=>{
+            it("should throw status 400 with a message",async()=>{
+                await axios.post("http://127.0.0.1:3000/employees/1677220155582/personaldetails",{
+                    "gender" : "Male",
+                    "blood_group" : "ABC",
+                    "marital_status" : "Single",
+                    "international_worker" : true,
+                    "dob"  : "2022-03-01",
+                    "physically_disabled" : false
+                })
+                .catch((error=>{
+                    expect(error.response.status).to.equal(400);
+                    expect(error.response.data).to.equal("must be equal to one of the allowed values");
+                }));
+            })
+        })
         describe("When adding personaldetails of a available employee with blank marital_status value",()=>{
             it("should throw status 400 with a message",async()=>{
                 await axios.post("http://127.0.0.1:3000/employees/1677220155582/personaldetails",{
@@ -583,7 +616,22 @@ describe('EmployeeController', () => {
                 }));
             })
         })
-
+        describe("When adding personaldetails of a available employee with invalid marital_status value",()=>{
+            it("should throw status 400 with a message",async()=>{
+                await axios.post("http://127.0.0.1:3000/employees/1677220155582/personaldetails",{
+                    "gender" : "Male",
+                    "blood_group" : "B+",
+                    "marital_status" : "NA",
+                    "international_worker" : true,
+                    "dob"  : "2022-03-01",
+                    "physically_disabled" : false
+                })
+                .catch((error=>{
+                    expect(error.response.status).to.equal(400);
+                    expect(error.response.data).to.equal("must be equal to one of the allowed values");
+                }));
+            })
+        })
         describe("When adding personaldetails of a available employee with blank international_worker value",()=>{
             it("should throw status 400 with a message",async()=>{
                 await axios.post("http://127.0.0.1:3000/employees/1677220155582/personaldetails",{
@@ -600,7 +648,6 @@ describe('EmployeeController', () => {
                 }));
             })
         })
-
         describe("When adding personaldetails of a available employee with blank dob value",()=>{
             it("should throw status 400 with a message",async()=>{
                 await axios.post("http://127.0.0.1:3000/employees/1677220155582/personaldetails",{
@@ -617,7 +664,6 @@ describe('EmployeeController', () => {
                 }));
             })
         })
-
         describe("When adding personaldetails of a available employee with additional property",()=>{
             it("should throw status 400 with a message",async()=>{
                 await axios.post("http://127.0.0.1:3000/employees/1677220155582/personaldetails",{
@@ -641,12 +687,7 @@ describe('EmployeeController', () => {
         describe("When adding employmentdetails of a particular available employee",()=>{
             it("should add the details with status 200",async()=>{
                 const response = await axios.post("http://127.0.0.1:3000/employees/"+newEmployeeID+"/employmentdetails",newEmployeeEmploymentData)
-                expect(response.data).have.property("employer");
-                expect(response.data).have.property("designation");
-                expect(response.data).have.property("department");
-                expect(response.data).have.property("location");
-                expect(response.data).have.property("doj");
-                expect(response.data).have.property("reporting_manager");                
+                expect(response.data).to.have.keys('employer','designation','department','location','doj','reporting_manager');
             })
         })
         
@@ -683,13 +724,13 @@ describe('EmployeeController', () => {
                     "employer" : "afour",
                     "designation": "",
                     "department" : "Development",
-                    "location": "pune",
+                    "location": "Pune",
                     "doj" : "2022-03-01",
                     "reporting_manager" : "Varun"
                 })
                 .catch((error=>{
                     expect(error.response.status).to.equal(400);
-                    expect(error.response.data).to.equal("must be equal to one of the allowed values");
+                    expect(error.response.data).to.contain("must be equal to one of the allowed values");
                 }));
             })
         })
@@ -700,7 +741,7 @@ describe('EmployeeController', () => {
                     "employer" : "afour",
                     "designation": "Developer",
                     "department" : "",
-                    "location": "pune",
+                    "location": "Pune",
                     "doj" : "2022-03-01",
                     "reporting_manager" : "Varun"
                 })
@@ -717,13 +758,29 @@ describe('EmployeeController', () => {
                     "employer" : "afour",
                     "designation": "Developer",
                     "department" : "Development",
-                    "location": "pune",
+                    "location": "",
                     "doj" : "2022-03-01",
                     "reporting_manager" : "Varun"
                 })
                 .catch((error=>{
                     expect(error.response.status).to.equal(400);
-                    expect(error.response.data).to.contain("must NOT have fewer than 1 characters");
+                    expect(error.response.data).to.contain("must be equal to one of the allowed values");
+                }));
+            })
+        })
+        describe("When adding employmentdetails of a available employee with invalid location value",()=>{
+            it("should throw status 400 with a message",async()=>{
+                await axios.post("http://127.0.0.1:3000/employees/1677220155582/employmentdetails",{
+                    "employer" : "afour",
+                    "designation": "Sales",
+                    "department" : "Development",
+                    "location": "",
+                    "doj" : "2022-03-01",
+                    "reporting_manager" : "Varun"
+                })
+                .catch((error=>{
+                    expect(error.response.status).to.equal(400);
+                    expect(error.response.data).to.contain("must be equal to one of the allowed values");
                 }));
             })
         })
@@ -751,7 +808,7 @@ describe('EmployeeController', () => {
                     "employer" : "afour",
                     "designation": "Developer",
                     "department" : "Development",
-                    "location": "pune",
+                    "location": "Pune",
                     "doj" : "2022-03-01",
                     "reporting_manager" : "Varun",
                     "dob" : "2022-03-01"
@@ -775,29 +832,40 @@ describe('EmployeeController', () => {
             })
             it("should fetch employee's all personalData property",async()=>{
                 const response = await axios.get("http://127.0.0.1:3000/employees/"+newEmployeeID+"/getdetails")
-                expect(response.data.PersonalDetails).to.have.property("gender");
-                expect(response.data.PersonalDetails).to.have.property("blood_group");
-                expect(response.data.PersonalDetails).to.have.property("marital_status");
-                expect(response.data.PersonalDetails).to.have.property("international_worker");
-                expect(response.data.PersonalDetails).to.have.property("dob");
-                expect(response.data.PersonalDetails).to.have.property("physically_disabled");
+                expect(response.data.PersonalDetails).to.have.keys('gender','blood_group','marital_status','international_worker','dob','physically_disabled');
             })
             it("should fetch employee's all employmentlData property",async()=>{
                 const response = await axios.get("http://127.0.0.1:3000/employees/"+newEmployeeID+"/getdetails")
-                expect(response.data.EmploymentDetails).to.have.property("employer");
-                expect(response.data.EmploymentDetails).to.have.property("designation");
-                expect(response.data.EmploymentDetails).to.have.property("department");
-                expect(response.data.EmploymentDetails).to.have.property("location");
-                expect(response.data.EmploymentDetails).to.have.property("doj");
-                expect(response.data.EmploymentDetails).to.have.property("reporting_manager");
+                expect(response.data.EmploymentDetails).to.have.keys('employer','designation','department','location','doj','reporting_manager');
             })
         })
 
-        // describe("When fetching Particular employees Personal and Employment Details",()=>{
-        //     it("should fetch employee's personal and employment Data",async()=>{
+        describe("When fetching unavailable employee Data with Personal and Employment Details",()=>{
+            it("should display No Data found for personal and employment Details",async()=>{
+                const response = await axios.get("http://127.0.0.1:3000/employees/167722015552/getdetails")
+                expect(response.data).to.have.property("PersonalDetails","No Data Found");
+                expect(response.data).to.have.property("EmploymentDetails","No Data Found");
+                expect(response.status).to.equal(200);
+            })
+        })
 
-        //     })
-        // })
+        describe("When fetching employee Data with Personal data available and Employment Details unavailable",()=>{
+            it("should display personal Data and No Data found for employment Details",async()=>{
+                const response = await axios.get("http://127.0.0.1:3000/employees/1677239938784/getdetails")
+                assert.lengthOf(Object.keys(response.data.PersonalDetails), 6);
+                expect(response.data).to.have.property("EmploymentDetails","No Data Found");
+                expect(response.status).to.equal(200);
+            })
+        })
+
+        describe("When fetching employee Data with Employment data available and Personal Details unavailable",()=>{
+            it("should display Employment Data and No Data found for Personal Details",async()=>{
+                const response = await axios.get("http://127.0.0.1:3000/employees/1677220232076/getdetails");
+                assert.lengthOf(Object.keys(response.data.EmploymentDetails), 6);
+                expect(response.data).to.have.property("PersonalDetails","No Data Found");
+                expect(response.status).to.equal(200);
+            })
+        })
 
     })
 
