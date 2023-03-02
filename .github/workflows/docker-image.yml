@@ -1,13 +1,32 @@
-name: Docker Image CI
+name: Build and Run Docker Container
+
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+
 jobs:
-  build:
+  build-and-run:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag nodeapp:$(date +%s)
+    - name: Checkout code
+      uses: actions/checkout@v2
+      
+    - name: Build Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: Dockerfile
+        push: false
+        tags: nodeapp:latest
+
+    - name: Start Docker container
+      uses: docker/compose-action@1.0.0
+      with:
+        compose-file: docker-compose.yml
+        service: app
+        env: |
+          PORT=3000
+        ports: |
+          "3000:3000"
