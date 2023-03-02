@@ -20,13 +20,3 @@ jobs:
         file: Dockerfile
         push: false
         tags: nodeapp:1.0.0
-
-    - name: Start Docker container
-      uses: docker/compose-NodeAPP@1.0.0
-      with:
-        compose-file: docker-compose.yml
-        service: app
-        env: |
-          PORT=3000
-        ports: |
-          "3000:3000"
