@@ -22,7 +22,7 @@ jobs:
         tags: nodeapp:1.0.0
 
     - name: Start Docker container
-      uses: docker/compose-nodeapp@1.0.0
+      uses: docker/compose-NodeAPP@1.0.0
       with:
         compose-file: docker-compose.yml
         service: app
